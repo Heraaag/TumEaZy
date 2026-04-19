@@ -1,5 +1,13 @@
 """TUM Pulse — Streamlit chat interface entry point."""
 
+import sys
+from pathlib import Path as _Path
+
+# Ensure the repo root is on sys.path so `tum_pulse` is importable
+_repo_root = str(_Path(__file__).parent.parent)
+if _repo_root not in sys.path:
+    sys.path.insert(0, _repo_root)
+
 import os
 import re
 import threading
