@@ -1,9 +1,31 @@
-.venv/*
+# Virtual environments
+.venv/
 venv/
 .env
-.DS_Store
-tum_pulse/data/
-*.db
-*.png
+
+# Python cache
 __pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Build / packaging
+build/
+dist/
 *.egg-info/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+
+# VSCode
+.vscode/
+
+# Data (important for your project)
+tum_pulse/data/
+
+# Database / outputs
+*.db
+*.sqlite

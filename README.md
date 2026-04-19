@@ -1,143 +1,187 @@
 # TUM Easy — Campus Co-Pilot for TUM 🎓
 
-TUM Easy is a multi-agent AI assistant designed to unify and simplify the fragmented digital ecosystem at the Technical University of Munich (TUM).
+TUM Easy is a multi-agent AI assistant that unifies the fragmented digital ecosystem at the Technical University of Munich (TUM).
 
-It connects platforms like **TUMonline**, **Moodle**, **ZHS**, and **Confluence / Collab Wiki** into a single intelligent interface that can retrieve information, recommend actions, and automate repetitive student tasks.
+It connects platforms like **TUMonline**, **Moodle**, **ZHS**, and optional **Confluence/Collab** sources into a single intelligent interface that can:
+- retrieve relevant information,
+- recommend decisions,
+- support studying with real course materials,
+- and automate repetitive student workflows.
 
 ---
 
 ## 🚀 Why TUM Easy?
 
-TUM students rely on multiple disconnected systems:
+TUM students constantly switch between disconnected systems:
 
 - **TUMonline** → courses, exams, registrations  
 - **Moodle** → lecture materials and deadlines  
-- **ZHS** → sports course booking  
-- **Collab Wiki / Confluence** → project/course documentation  
+- **ZHS** → sports booking  
+- **Confluence / Collab** → course or project information  
 
-This leads to:
-- missed deadlines  
-- inefficient manual checking  
-- scattered information  
-- unnecessary stress  
+This fragmentation leads to:
+- missed deadlines,
+- inefficient manual checking,
+- scattered information,
+- and unnecessary stress and time loss.
 
-**TUM Easy solves this by acting as a personal campus co-pilot.**
+TUM Easy acts as a personal AI co-pilot that centralizes these workflows in one interface.
 
 ---
 
 ## 🧠 Core Features
 
 ### 📅 Deadline Watcher
-Aggregates deadlines from:
-- TUMonline
-- Moodle
-- Confluence
+Aggregates deadlines across platforms and stores them locally for quick retrieval.
+
+Sources:
+- TUMonline (NAT API + fallback scraping)
+- Moodle (AJAX/API + DOM fallback)
+- Confluence / Collab (optional search)
 
 Features:
-- unified deadline view  
-- SQLite caching  
-- course-based filtering  
-- upcoming alerts  
+- unified deadline view
+- filtering by enrolled courses
+- automatic alert generation
+- SQLite persistence
+- calendar integration
 
 ---
 
-### 📚 Elective Advisor
-Recommends electives using AI.
+### 🎓 Elective & Career Recommender
+Recommends electives based on the student profile and explains why they fit.
 
 Features:
-- TUM module API integration  
-- semantic matching via embeddings  
-- personalized suggestions based on profile and grades  
+- real TUM module catalogue via NAT API
+- semantic matching via Titan embeddings
+- profile-aware recommendations using courses and grades
+- LLM-generated reasoning via Claude
+- career path suggestions and relevant Munich companies
 
 ---
 
-### 🧠 Learning Buddy
-Helps you study smarter.
+### 📚 Smart Learning Buddy
+A study assistant that works with real course materials.
 
 Features:
-- downloads Moodle PDFs  
-- extracts lecture content  
-- analyzes past exams  
-- generates structured study plans  
+- detects the relevant course from user input
+- selects useful documents from cached Moodle materials
+- extracts content from PDFs
+- analyzes important topics with LLMs
+- generates:
+  - structured study plans
+  - summaries and explanations
+  - follow-up study prompts
+- adapts to weak subjects and exam relevance
 
 ---
 
 ### 🏃 ZHS Sports Assistant
-Automates sport course interaction.
+Supports interaction with the ZHS system.
 
 Features:
-- search ZHS courses  
-- display available slots  
-- attempt registration via automation  
+- course search
+- availability checks
+- experimental automated registration
 
 ---
 
 ### 💬 Conversational Interface
-Single chat interface powered by multi-agent system.
+A single chat interface powered by a multi-agent system.
 
 Agents:
-- Watcher → deadlines  
-- Advisor → electives  
-- Learning Buddy → studying  
-- Executor → actions (ZHS)  
-- General Assistant → fallback  
+- **Watcher** → deadlines
+- **Advisor** → electives and career direction
+- **Learning Buddy** → studying and course materials
+- **Executor** → actions such as ZHS interaction
 
 ---
 
 ## 🏗 Architecture
 
+```text
 User → Streamlit UI → LangGraph Orchestrator → Agents → External Systems → SQLite
+```
+
+### Routing Design
+The orchestrator uses **fast heuristic routing** rather than an LLM for intent classification.  
+This keeps routing latency low and delegates the actual reasoning to the specialized agents.
+
+Context used for routing includes:
+- enrolled courses
+- grades
+- weak subjects
+- upcoming deadlines
+- time pressure
 
 ---
 
 ## 🛠 Tech Stack
 
-**Frontend**
-- Streamlit
+### Frontend
+- **Streamlit** → interactive web interface and chat UI
 
-**Backend**
-- Python 3.10+
+### Backend
+- **Python 3.10+** → core application logic
+- **LangGraph** → orchestration of agent nodes and flow
+- **SQLite** → persistent local storage for profiles, deadlines, alerts, and caching
 
-**AI**
-- Amazon Bedrock (Claude)
-- Amazon Titan Embeddings
+### AI
+- **AWS Bedrock**
+  - **Claude Haiku** → fast responses and lightweight reasoning
+  - **Claude Sonnet** → heavier reasoning and study-plan generation
+  - **Titan Embeddings** → semantic similarity for recommendations
 
-**Agents**
-- LangGraph
-- LangChain components
+### Data & Automation
+- **Requests** → TUM NAT API integration
+- **Playwright** → browser automation for login-based or dynamic pages
+- **PyMuPDF** → PDF parsing for study materials
 
-**Automation & Data**
-- Playwright
-- Requests / BeautifulSoup
-- PyMuPDF
-
-**Storage**
-- SQLite
+### Performance / Caching
+- **SQLiteMemory** → structured persistence
+- **LLMCache** → cached model outputs to reduce latency and cost
+- **Connector cache** → cached Moodle/current-course data
 
 ---
 
 ## 📁 Project Structure
 
-```
+```text
 tum_pulse/
-├── main.py
 ├── agents/
+│   ├── advisor.py              # Elective recommendation and career guidance
+│   ├── executor.py             # ZHS and action execution
+│   ├── learning_buddy_v2.py    # Smart study assistant
+│   ├── orchestrator.py         # LangGraph routing logic
+│   └── watcher.py              # Deadline aggregation and alerts
 ├── connectors/
+│   ├── cache.py                # Connector-level caching utilities
+│   ├── moodle.py               # Moodle connector
+│   └── tumonline.py            # TUMonline connector
+├── data/                       # Downloaded or cached study materials
 ├── memory/
+│   └── database.py             # SQLite-based memory layer
 ├── tools/
+│   ├── bedrock_client.py       # AWS Bedrock integration
+│   ├── embeddings.py           # Titan embedding utilities
+│   ├── llm_cache.py            # Cached LLM responses
+│   └── moodle_scraper.py       # Moodle scraping / Playwright fallback
+├── config.py                   # Environment variables and paths
+├── db.py                       # DB setup helpers
+└── main.py                     # Streamlit entry point
 ```
 
 ---
 
 ## ⚙️ Setup
 
-### 1. Clone repo
+### 1. Clone the repository
 ```bash
 git clone <repo-url>
 cd <repo>
 ```
 
-### 2. Create environment
+### 2. Create and activate a virtual environment
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
@@ -148,18 +192,20 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4. Install Playwright
+### 4. Install Playwright browsers
 ```bash
-playwright install
+python -m playwright install
 ```
 
----
-
-## 🔐 Environment Variables
-
-Create `.env` file:
-
+### 5. Create your environment file
+```bash
+cp .env.example .env
 ```
+
+### 6. Fill in required credentials
+Example variables:
+
+```env
 AWS_ACCESS_KEY_ID=
 AWS_SECRET_ACCESS_KEY=
 AWS_REGION=
@@ -180,57 +226,60 @@ CONFLUENCE_PAT=
 
 ## ▶️ Run the App
 
+Run from the project root:
+
 ```bash
-streamlit run tum_pulse/main.py
+python -m streamlit run tum_pulse/main.py
 ```
 
 ---
 
 ## ⚠️ Current Status
 
-Working:
-- multi-agent routing  
-- Streamlit UI  
-- elective recommendations  
-- deadline aggregation  
-- study plan generation  
+### Working
+- multi-agent routing with LangGraph
+- Streamlit interface
+- deadline aggregation
+- elective recommendations
+- study-plan generation from course materials
+- calendar integration
 
-Partial / fallback:
-- some APIs use mock data  
-- scraping depends on login/session  
-- ZHS automation may require setup  
+### Partial / fallback
+- some platform access paths depend on login/session state
+- scraping fallbacks may return partial data
+- ZHS automation is still experimental
 
 ---
 
 ## 🚧 Limitations
 
-- depends on external platform stability  
-- login flows may change  
-- requires valid credentials  
-- automation is environment-dependent  
+- depends on the stability of external university systems
+- SSO / login flows may change and break scraping
+- valid credentials are required for some features
+- Playwright-based automation is environment-dependent
+- reasoning-heavy tasks, especially study-plan generation and document analysis, can be slower than simple routing or retrieval tasks
 
 ---
 
 ## 🔮 Future Work
 
-- calendar integration  
-- Mensa API  
-- room finder  
-- push notifications  
-- improved personalization  
+- smarter notifications and reminders
+- Mensa API integration
+- room finder / campus navigation support
+- improved long-term personalization
 
 ---
 
 ## 🧪 Hackathon Context
 
-Built as part of a Campus Co-Pilot challenge:
+Built in the spirit of a campus co-pilot:
 
-> Students should not have to behave like APIs between university systems.
+> Students should not have to act as the integration layer between university systems.
 
 ---
 
 ## ⚠️ Responsible Use
 
-- do not abuse university systems  
-- protect credentials  
-- respect platform limits  
+- do not abuse university systems
+- protect your credentials
+- respect rate limits and platform policies
